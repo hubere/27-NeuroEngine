@@ -1,4 +1,9 @@
 *.pyc
+*.class
 venv
 .metadata
 classes
+bin
+
+comed/neuroengine/edengine/data/bitboardEvaluations/chesspositions_test.zip
+comed/neuroengine/edengine/data/bitboardEvaluations/chesspositions_training.zip
