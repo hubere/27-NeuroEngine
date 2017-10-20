@@ -10,17 +10,10 @@ import collections
 import argparse
 import sys
 
-# add this block to add parent dirs to path
-import os,sys,inspect
-currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-parentdir = os.path.dirname(currentdir)
-sys.path.insert(0,parentdir)
-parentParentDir = os.path.dirname(parentdir)
-sys.path.insert(0,parentParentDir)
 
-import edengine_init
-import edengine_input
-import edengine_monitor
+from comed.neuroengine.edengine import edengine_init
+from comed.neuroengine.edengine import edengine_input  
+from comed.neuroengine.edengine import edengine_monitor 
 
 #
 # global settings
