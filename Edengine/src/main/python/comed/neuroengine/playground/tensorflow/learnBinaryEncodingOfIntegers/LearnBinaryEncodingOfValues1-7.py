@@ -58,8 +58,10 @@ def train():
   
   #
   # Build 3 layer DNN with 10, 20, 10 units respectively.
-  estimator = tf.contrib.learn.DNNRegressor(feature_columns=feature_columns, hidden_units=[100, 200, 10])
+  estimator = tf.contrib.learn.DNNRegressor(feature_columns=feature_columns, hidden_units=[4, 4])
+  print('--- DNNRegressor(feature_columns=feature_columns, hidden_units=[100, 200, 10] ---')
  # estimator = tf.contrib.learn.LinearRegressor(feature_columns=feature_columns)
+ # print('--- LinearRegressor(feature_columns=feature_columns) ---')
   
   
   # Fit model.

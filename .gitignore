@@ -7,3 +7,5 @@ bin
 
 comed/neuroengine/edengine/data/bitboardEvaluations/chesspositions_test.zip
 comed/neuroengine/edengine/data/bitboardEvaluations/chesspositions_training.zip
+Edengine/src/main/python/comed/neuroengine/edengine/data/bitboardEvaluations/chesspositions_test.zip
+Edengine/src/main/python/comed/neuroengine/edengine/data/bitboardEvaluations/chesspositions_training.zip

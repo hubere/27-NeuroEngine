@@ -31,11 +31,12 @@ import chesspresso.position.Position;
  */
 public class Png2tf_categorialBoard {
 
-	private static String filenameData = "src\\main\\resources\\data.pgn";
-	private static String filenameBewertung = "src\\main\\resources\\stockfish.csv";
-	private static String filenameTrainingsSet = "src\\main\\resources\\chesspositions_training.csv";
-	private static String filenameTestSet = "src\\main\\resources\\chesspositions_test.csv";
+	private static String filenameData = "src\\main\\python\\comed\\neuroengine\\edengine\\data\\stockfishEvaluations\\data.pgn";
+	private static String filenameBewertung = "src\\main\\python\\comed\\neuroengine\\edengine\\data\\stockfishEvaluations\\stockfish.csv";
+	private static String filenameTrainingsSet = "src\\main\\python\\comed\\neuroengine\\edengine\\data\\stockfishEvaluations\\kaggle_chesspositions_train.extFEN";
+	private static String filenameTestSet = "src\\main\\python\\comed\\neuroengine\\edengine\\data\\stockfishEvaluations\\kaggle_chesspositions_test.extFEN";
 
+	
 	public static void main(String[] args) {
 
 		System.out.println("Working Directory = " + System.getProperty("user.dir"));

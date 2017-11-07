@@ -28,6 +28,15 @@ TensorBoard:
 	
 	Browse http://localhost:6006/ 
 	
+NN:
+	I will use a Perceptron since:
+	- fully connected, very easy, binary input?!
+	
+	I will use a CNN since:
+	- it pays respect to 2D structure of input
+	see https://de.wikipedia.org/wiki/Convolutional_Neural_Network 
+	
+		
 
 Useful links:
 

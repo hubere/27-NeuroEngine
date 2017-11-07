@@ -12,18 +12,48 @@ import collections
 
 
 
-# Global constants describing the data set.
-#TRAINING_FILE = "1000-chesspositions_training.csv"
-#TEST_FILE = "1000-chesspositions_test.csv"
-#DIMENSION = 768
 
-#TRAINING_FILE = "3-pawnsPositions_training.csv"
-#TEST_FILE = "3-pawnsPositions_test.csv"
-#DIMENSION = 19
+filenameTrainingsSet = "D:\\usr\\huber\\Projekte\\2-development\\27-NeuroEngine\\Edengine\\src\\main\\python\\comed\\neuroengine\\edengine\\data\\stockfishEvaluations\\kaggle_chesspositions_training.extFEN"
+filenameTestSet =      "D:\\usr\\huber\\Projekte\\2-development\\27-NeuroEngine\\Edengine\\src\\main\\python\\comed\\neuroengine\\edengine\\data\\stockfishEvaluations\\kaggle_chesspositions_test.extFEN"
 
-#TRAINING_FILE = "binaryEncoding_training.csv"
-#TEST_FILE = "binaryEncoding_test.csv"
-#DIMENSION = 4
+
+#
+# defining columns
+#
+
+CSV_COLUMNS = ["a1", "a2", "a3" , "a4", "a5", "a6", "a7", "a8",
+               "b1", "b2", "b3" , "b4", "b5", "b6", "b7", "b8",
+               "c1", "c2", "c3" , "c4", "c5", "c6", "c7", "c8",
+               "d1", "d2", "d3" , "d4", "d5", "d6", "d7", "d8",
+               "e1", "e2", "e3" , "e4", "e5", "e6", "e7", "e8",
+               "f1", "f2", "f3" , "f4", "f5", "f6", "f7", "f8",
+               "g1", "g2", "g3" , "g4", "g5", "g6", "g7", "g8",
+               "h1", "h2", "h3" , "h4", "h5", "h6", "h7", "h8",
+               "ActiveColour", "Castling", "EnPassant", "eval"]
+  
+
+#
+# TODO FIXME check difference of tf.feature_column.indicator_column and tf.feature_column.embedding_column (see https://www.kaggle.com/mmmarcy/tensorflow-dnn-regressor-with-feature-engineering)
+#
+feature_columns = []
+pieces = ["r", "n" , "b", "q", "k", "p", "R", "N", "B", "Q", "K", "P"]
+#for line in range(1,8):
+#  for row in range(1,8):
+for line in range(1,3):
+  for row in range(1,3):
+    key = chr(96+line) + str(row)  # build key "a1", "a2", a3 ....
+    feature_columns.append(tf.feature_column.indicator_column(tf.feature_column.categorical_column_with_vocabulary_list(key, pieces)))
+
+ActiveColour = tf.feature_column.indicator_column(tf.feature_column.categorical_column_with_vocabulary_list( "ActiveColour", ["w", "b"]))
+Castling     = tf.feature_column.indicator_column(tf.feature_column.categorical_column_with_vocabulary_list( "Castling",     ["k" , "q", "K", "Q", "-"]))
+# EnPassant    = tf.feature_column.categorical_column_with_vocabulary_list( "EnPassant",    ["-", "*" ]) # DO NOT USE for there could be any field instead of '-'
+
+
+feature_columns.append(ActiveColour)
+feature_columns.append(Castling)
+
+
+
 
 
 
