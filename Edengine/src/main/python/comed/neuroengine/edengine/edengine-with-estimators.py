@@ -2,7 +2,9 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-#from sacred import Experiment
+from sacred import Experiment
+from sacred.observers import MongoObserver
+
 
 import tensorflow as tf
 import numpy as np
@@ -12,6 +14,8 @@ import argparse
 import sys
 import pandas
 import tempfile
+import threading
+
 
 import edengine_init
 import edengine_input
@@ -23,15 +27,34 @@ import edengine_monitor
 FLAGS = None
 # tf.logging.set_verbosity(tf.logging.INFO)
 
+#
+# the sacred experiment
+#
+ex = Experiment("edengine-with-estimators")
+ex.observers.append(MongoObserver.create())
 
-filenameTrainingsSet = "D:\\usr\\huber\\Projekte\\2-development\\27-NeuroEngine\\Edengine\\src\\main\\python\\comed\\neuroengine\\edengine\\data\\stockfishEvaluations\\70_kaggle_chesspositions_training.extFEN"
-filenameTestSet =      "D:\\usr\\huber\\Projekte\\2-development\\27-NeuroEngine\\Edengine\\src\\main\\python\\comed\\neuroengine\\edengine\\data\\stockfishEvaluations\\8_of_70_kaggle_chesspositions_test.extFEN"
+#filenameTrainingsSet = "data\\stockfishEvaluations\\70_kaggle_chesspositions_training.extFEN"
+#filenameTestSet =      "data\\stockfishEvaluations\\8_of_70_kaggle_chesspositions_test.extFEN"
+
+#
+# Hyper parameter to be used by experiment
+#
+@ex.config
+def confnet_config():
+  batch_size = 100
+  epochs = 12
+
+  train_data = "data\\stockfishEvaluations\\kaggle_chesspositions_training.extFEN"
+  test_data = "data\\stockfishEvaluations\\8_of_70_kaggle_chesspositions_test.extFEN"
+  model_type = "deep"
+  model_dir = "/usr/huber/Projekte/2-development/27-NeuroEngine/model/deep/68_34/tanh"
+  train_steps = 200                     # Number of training steps.
+  log_dir = edengine_init.logDir        # Summaries log directory
 
 
 #
 # defining columns
 #
-
 CSV_COLUMNS = ["a1", "a2", "a3" , "a4", "a5", "a6", "a7", "a8",
                "b1", "b2", "b3" , "b4", "b5", "b6", "b7", "b8",
                "c1", "c2", "c3" , "c4", "c5", "c6", "c7", "c8",
@@ -48,10 +71,8 @@ CSV_COLUMNS = ["a1", "a2", "a3" , "a4", "a5", "a6", "a7", "a8",
 #
 feature_columns = []
 pieces = ["r", "n" , "b", "q", "k", "p", "R", "N", "B", "Q", "K", "P"]
-#for line in range(1,8):
-#  for row in range(1,8):
-for line in range(1,3):
-  for row in range(1,3):
+for line in range(1,8):
+  for row in range(1,8):
     key = chr(96+line) + str(row)  # build key "a1", "a2", a3 ....
     feature_columns.append(tf.feature_column.indicator_column(tf.feature_column.categorical_column_with_vocabulary_list(key, pieces)))
 
@@ -64,16 +85,18 @@ feature_columns.append(ActiveColour)
 feature_columns.append(Castling)
 
 
+def launch_tensorboard():
+  print ("launching tensorboard: tensorboard --logdir=TRAIN:\\usr\\huber\\Projekte\\2-development\\27-NeuroEngine\\model")
+  os.system('tensorboard --logdir=TRAIN:\\usr\\huber\\Projekte\\2-development\\27-NeuroEngine\\model')
+  return
+ 
  
 def input_fn(data_file, num_epochs, shuffle):
   """Input builder function."""
   
   df_data = pandas.read_csv(data_file, names=CSV_COLUMNS, engine="python", skipinitialspace=True, skiprows=1, na_values='.' )
-#  labels = df_data["eval"].astype(pandas.np.float64) # normalize evaluations to -1.0 to 1.0
-  labels = df_data["eval"].apply(lambda x: x /100.0).astype(pandas.np.float64) # normalize evaluations to -1.0 to 1.0
-      
-  # labels = df_data["eval"].apply(lambda x: x + 10000).astype(int)  
-  del df_data['eval']  # remove column "eval" from df_data
+  labels = df_data["eval"].apply(lambda x: x / 1000.0).apply(lambda x: max(x, -1.0)).apply(lambda x: min(x, 1.0)).astype(pandas.np.float64)     # normalize evaluations to -1.0 to 1.0
+  del df_data['eval']                                                              # remove column "eval" from df_data
   
   return tf.estimator.inputs.pandas_input_fn(
       x=df_data,
@@ -111,12 +134,21 @@ def build_estimator(model_dir, model_type):
   return m
   
 
+@ex.automain
 def train_and_eval(model_dir, model_type, train_steps, train_data, test_data):
   """Train and evaluate the model."""
   print ("train_and_eval('"+model_dir+"','"+ model_type+"','"+ str(train_steps)+"','"+ train_data+"','"+ test_data+"')")
+
+  # clean up model dir  
+  if tf.gfile.Exists(model_dir):
+    tf.gfile.DeleteRecursively(model_dir)
+  tf.gfile.MakeDirs(model_dir)
+  # model_dir = tempfile.mkdtemp() if not model_dir else model_dir
   
-  #filenameTrainingsSet, filenameTestSet = maybe_download(train_data, test_data)
-  model_dir = tempfile.mkdtemp() if not model_dir else model_dir
+  # start tensorboard
+  t = threading.Thread(target=launch_tensorboard, args=([]))
+  t.start()
+
 
   estimator = build_estimator(model_dir, model_type)
   
@@ -135,60 +167,63 @@ def train_and_eval(model_dir, model_type, train_steps, train_data, test_data):
       print("%s: %s \t" % (key, results[key]) , sep=' ', end='', flush=True)
     print ("")
 
+  #
+  # TODO FIXME HU stop tensorboard 
+  #
   
   print ("--- The End ---")
   
   
-def main(_):
-#  if tf.gfile.Exists(FLAGS.log_dir):
-#    tf.gfile.DeleteRecursively(FLAGS.log_dir)
-#  tf.gfile.MakeDirs(FLAGS.log_dir)
-  
-  train_and_eval(FLAGS.model_dir, FLAGS.model_type, FLAGS.train_steps,
-                 FLAGS.train_data, FLAGS.test_data)
-
-
- 
-  
-if __name__ == "__main__":
-  parser = argparse.ArgumentParser()
-  parser.register("type", "bool", lambda v: v.lower() == "true")
-  parser.add_argument(
-      "--model_dir",
-      type=str,
-      default="/usr/huber/Projekte/2-development/27-NeuroEngine/model/deep/68_34/tanh",
-      help="Base directory for output models."
-  )
-  parser.add_argument(
-      "--model_type",
-      type=str,
-      default="deep",
-      help="Valid model types: {'wide', 'deep', 'wide_n_deep'}."
-  )
-  parser.add_argument(
-      "--train_steps",
-      type=int,
-      default=200,
-      help="Number of training steps."
-  )
-  parser.add_argument(
-      "--train_data",
-      type=str,
-      default=filenameTrainingsSet,
-      help="Path to the training data."
-  )
-  parser.add_argument(
-      "--test_data",
-      type=str,
-      default=filenameTestSet,
-      help="Path to the test data."
-  )
-  parser.add_argument(
-      '--log_dir', 
-      type=str, 
-      default=edengine_init.logDir,
-      help='Summaries log directory'
-  )
-  
-  FLAGS, unparsed = parser.parse_known_args()
-tf.app.run(main=main, argv=[sys.argv[0]] + unparsed)
+# def main(_):
+# #  if tf.gfile.Exists(FLAGS.log_dir):
+# #    tf.gfile.DeleteRecursively(FLAGS.log_dir)
+# #  tf.gfile.MakeDirs(FLAGS.log_dir)
+#   
+#   train_and_eval(FLAGS.model_dir, FLAGS.model_type, FLAGS.train_steps,
+#                  FLAGS.train_data, FLAGS.test_data)
+# 
+# 
+#  
+#   
+# if __name__ == "__main__":
+#   parser = argparse.ArgumentParser()
+#   parser.register("type", "bool", lambda v: v.lower() == "true")
+#   parser.add_argument(
+#       "--model_dir",
+#       type=str,
+#       default="/usr/huber/Projekte/2-development/27-NeuroEngine/model/deep/68_34/tanh",
+#       help="Base directory for output models."
+#   )
+#   parser.add_argument(
+#       "--model_type",
+#       type=str,
+#       default="deep",
+#       help="Valid model types: {'wide', 'deep', 'wide_n_deep'}."
+#   )
+#   parser.add_argument(
+#       "--train_steps",
+#       type=int,
+#       default=200,
+#       help="Number of training steps."
+#   )
+#   parser.add_argument(
+#       "--train_data",
+#       type=str,
+#       default=filenameTrainingsSet,
+#       help="Path to the training data."
+#   )
+#   parser.add_argument(
+#       "--test_data",
+#       type=str,
+#       default=filenameTestSet,
+#       help="Path to the test data."
+#   )
+#   parser.add_argument(
+#       '--log_dir', 
+#       type=str, 
+#       default=edengine_init.logDir,
+#       help='Summaries log directory'
+#   )
+#   
+#   FLAGS, unparsed = parser.parse_known_args()
+# tf.app.run(main=main, argv=[sys.argv[0]] + unparsed)
